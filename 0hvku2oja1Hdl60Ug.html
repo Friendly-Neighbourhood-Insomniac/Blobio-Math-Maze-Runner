@@ -1,0 +1,627 @@
+<html><head><base href="https://websim.ai">
+<title>Super Math-io: Multiply and Conquer!</title>
+<style>
+  @font-face {
+    font-family: 'Press Start 2P';
+    src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  }
+
+  body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: 'Press Start 2P', cursive;
+    background-image: url('https://github.com/Friendly-Neighbourhood-Insomniac/Blobio-Math-Maze-Runner/blob/858e9d48d2996f2b1c722bccc82985e32080cb93/wallpaper-blobio.webp');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: #ecf0f1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  canvas {
+    display: block;
+    image-rendering: pixelated;
+    max-width: 100%;
+    max-height: 70vh;
+  }
+  
+  #game-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    max-height: 80vh;
+    margin: 20px auto;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+  }
+  
+  #hud {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    gap: 20px;
+    background: rgba(44, 62, 80, 0.8);
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 16px;
+    text-shadow: 2px 2px #000;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  #hud span {
+    color: #f1c40f;
+  }
+  
+  #title {
+    text-align: center;
+    font-size: 24px;
+    color: #3498db;
+    margin-bottom: 20px;
+    text-shadow: 3px 3px #2c3e50;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 15px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 800px;
+    box-sizing: border-box;
+  }
+
+  #question-modal {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(52, 73, 94, 0.9);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    z-index: 100;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    width: 80%;
+    max-width: 300px;
+  }
+
+  #question-text {
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: #ecf0f1;
+  }
+
+  #answer-input {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    padding: 10px;
+    width: 80%;
+    max-width: 100px;
+    text-align: center;
+    margin-bottom: 10px;
+    border: none;
+    border-radius: 5px;
+  }
+
+  #submit-answer {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    padding: 10px 20px;
+    background: #2ecc71;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  #submit-answer:hover {
+    background: #27ae60;
+  }
+
+  #touch-controls {
+    display: none;
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 150px;
+  }
+
+  .touch-button {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: rgba(52, 152, 219, 0.7);
+    border-radius: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: white;
+    user-select: none;
+  }
+
+  #touch-up { top: 0; left: 50px; }
+  #touch-left { top: 50px; left: 0; }
+  #touch-right { top: 50px; right: 0; }
+  #touch-down { bottom: 0; left: 50px; }
+
+  @media (max-width: 600px) {
+    #title {
+      font-size: 20px;
+      padding: 10px;
+    }
+
+    #hud {
+      font-size: 14px;
+      gap: 10px;
+      padding: 5px;
+    }
+
+    #question-text {
+      font-size: 14px;
+    }
+
+    #answer-input, #submit-answer {
+      font-size: 12px;
+    }
+
+    #touch-controls {
+      display: block;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h1 id="title" style="color: #00FFFF; text-shadow: 0 0 10px #00FFFF, 0 0 20px #00FFFF, 2px 2px 4px #4A4A4A; font-family: 'Press Start 2P', cursive; letter-spacing: 2px;">Blob-io: Math Maze-Runner!</h1>
+
+<div id="game-container">
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <div id="hud" style="color: #00FFFF; text-shadow: 0 0 10px #00FFFF, 0 0 20px #00FFFF;">
+    <span>SCORE: <span id="score">0000</span></span>
+    <span>LEVEL: <span id="level">01</span></span>
+    <span>LIVES: <span id="lives">3</span></span>
+  </div>
+
+  <div id="question-modal">
+    <div id="question-text"></div>
+    <input type="number" id="answer-input">
+    <button id="submit-answer">Submit</button>
+  </div>
+
+  <div id="touch-controls">
+    <div class="touch-button" id="touch-up">↑</div>
+    <div class="touch-button" id="touch-left">←</div>
+    <div class="touch-button" id="touch-right">→</div>
+    <div class="touch-button" id="touch-down">↓</div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const hudScore = document.getElementById('score');
+  const hudLevel = document.getElementById('level');
+  const hudLives = document.getElementById('lives');
+  const questionModal = document.getElementById('question-modal');
+  const questionText = document.getElementById('question-text');
+  const answerInput = document.getElementById('answer-input');
+  const submitAnswer = document.getElementById('submit-answer');
+  const touchControls = document.getElementById('touch-controls');
+
+  let TILE_SIZE = 40;
+  let MAZE_WIDTH = 20;
+  let MAZE_HEIGHT = 15;
+  const PLAYER_SPEED = 4;
+  let player;
+  let maze = [];
+  let flagpole;
+  let score = 0;
+  let level = 1;
+  let lives = 3;
+  let currentQuestion = null;
+  let questionStartTime;
+  let isQuestionActive = false;
+
+  function resizeGame() {
+    const gameContainer = document.getElementById('game-container');
+    const containerWidth = gameContainer.clientWidth;
+    const containerHeight = gameContainer.clientHeight;
+    const aspectRatio = 4/3;
+
+    let newWidth, newHeight;
+
+    if (containerWidth / aspectRatio > containerHeight) {
+      newHeight = containerHeight;
+      newWidth = newHeight * aspectRatio;
+    } else {
+      newWidth = containerWidth;
+      newHeight = newWidth / aspectRatio;
+    }
+
+    canvas.style.width = `${newWidth}px`;
+    canvas.style.height = `${newHeight}px`;
+
+    // Update tile size and maze dimensions
+    TILE_SIZE = Math.floor(newWidth / MAZE_WIDTH);
+    MAZE_HEIGHT = Math.floor(newHeight / TILE_SIZE);
+
+    // Regenerate maze and reposition player
+    init();
+
+    // Show/hide touch controls based on screen size
+    if (window.innerWidth <= 600) {
+      touchControls.style.display = 'block';
+    } else {
+      touchControls.style.display = 'none';
+    }
+  }
+
+  class Player {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.width = TILE_SIZE - 10;
+      this.height = TILE_SIZE - 10;
+      this.color = '#00FFFF';
+      this.velocity = { x: 0, y: 0 };
+      this.frameX = 0;
+      this.frameY = 0;
+      this.maxFrame = 3;
+      this.fps = 20;
+      this.frameTimer = 0;
+      this.frameInterval = 1000/this.fps;
+    }
+
+    draw(deltaTime) {
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 10;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.shadowBlur = 0;
+      
+      // Simple running animation
+      if (this.frameTimer > this.frameInterval) {
+        if (this.frameX < this.maxFrame) this.frameX++;
+        else this.frameX = 0;
+        this.frameTimer = 0;
+      } else {
+        this.frameTimer += deltaTime;
+      }
+
+      // Draw limbs based on frame
+      ctx.fillStyle = '#0099FF';
+      ctx.shadowColor = '#0099FF';
+      ctx.shadowBlur = 5;
+      if (this.frameX === 0 || this.frameX === 2) {
+        ctx.fillRect(this.x - 3, this.y + this.height - 8, 3, 8); // Left leg
+        ctx.fillRect(this.x + this.width, this.y + this.height - 8, 3, 8); // Right leg
+      } else {
+        ctx.fillRect(this.x - 1, this.y + this.height - 4, 3, 4); // Left leg bent
+        ctx.fillRect(this.x + this.width - 2, this.y + this.height - 4, 3, 4); // Right leg bent
+      }
+      ctx.shadowBlur = 0;
+
+      // Eyes
+      ctx.fillStyle = '#FFFFFF';
+      ctx.shadowColor = '#FFFFFF';
+      ctx.shadowBlur = 5;
+      ctx.fillRect(this.x + 4, this.y + 4, 4, 4);
+      ctx.fillRect(this.x + this.width - 8, this.y + 4, 4, 4);
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(this.x + 5, this.y + 5, 2, 2);
+      ctx.fillRect(this.x + this.width - 7, this.y + 5, 2, 2);
+    }
+
+    update(deltaTime) {
+      if (!isQuestionActive) {
+        let newX = this.x + this.velocity.x;
+        let newY = this.y + this.velocity.y;
+
+        // Check collision with maze walls
+        if (!this.checkCollision(newX, this.y)) {
+          this.x = newX;
+        } else {
+          // Slide along walls
+          while (this.checkCollision(this.x + Math.sign(this.velocity.x), this.y)) {
+            this.x += Math.sign(this.velocity.x);
+          }
+        }
+        if (!this.checkCollision(this.x, newY)) {
+          this.y = newY;
+        } else {
+          // Slide along walls
+          while (this.checkCollision(this.x, this.y + Math.sign(this.velocity.y))) {
+            this.y += Math.sign(this.velocity.y);
+          }
+        }
+
+        // Screen boundaries
+        this.x = Math.max(0, Math.min(this.x, canvas.width - this.width));
+        this.y = Math.max(0, Math.min(this.y, canvas.height - this.height));
+      }
+
+      this.draw(deltaTime);
+    }
+
+    checkCollision(x, y) {
+      const tileX1 = Math.floor(x / TILE_SIZE);
+      const tileY1 = Math.floor(y / TILE_SIZE);
+      const tileX2 = Math.floor((x + this.width - 1) / TILE_SIZE);
+      const tileY2 = Math.floor((y + this.height - 1) / TILE_SIZE);
+
+      for (let tileY = tileY1; tileY <= tileY2; tileY++) {
+        for (let tileX = tileX1; tileX <= tileX2; tileX++) {
+          if (maze[tileY] && maze[tileY][tileX] === 1) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+  }
+
+  class Flagpole {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.width = TILE_SIZE;
+      this.height = TILE_SIZE;
+    }
+
+    draw() {
+      ctx.fillStyle = '#7f8c8d';
+      ctx.fillRect(this.x + TILE_SIZE / 4, this.y, TILE_SIZE / 8, this.height);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(this.x + TILE_SIZE / 4, this.y, TILE_SIZE / 2, TILE_SIZE / 2);
+    }
+  }
+
+  function generateMaze() {
+    maze = Array(MAZE_HEIGHT).fill().map(() => Array(MAZE_WIDTH).fill(1));
+    
+    function carve(x, y) {
+      const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+      directions.sort(() => Math.random() - 0.5);
+      
+      for (let [dx, dy] of directions) {
+        const nx = x + dx * 2;
+        const ny = y + dy * 2;
+        if (nx >= 0 && ny >= 0 && nx < MAZE_WIDTH && ny < MAZE_HEIGHT && maze[ny][nx] === 1) {
+          maze[y + dy][x + dx] = 0;
+          maze[ny][nx] = 0;
+          carve(nx, ny);
+        }
+      }
+    }
+
+    maze[1][1] = 0;
+    carve(1, 1);
+
+    // Ensure a path to the end
+    let x = 1, y = 1;
+    while (x < MAZE_WIDTH - 2 || y < MAZE_HEIGHT - 2) {
+      if (x < MAZE_WIDTH - 2) {
+        maze[y][x+1] = 0;
+        x += 2;
+      }
+      if (y < MAZE_HEIGHT - 2) {
+        maze[y+1][x] = 0;
+        y += 2;
+      }
+    }
+
+    // Set end point
+    maze[MAZE_HEIGHT - 2][MAZE_WIDTH - 2] = 0;
+
+    // Place flagpole
+    flagpole = new Flagpole((MAZE_WIDTH - 2) * TILE_SIZE, (MAZE_HEIGHT - 2) * TILE_SIZE);
+  }
+
+  function drawMaze() {
+    for (let y = 0; y < MAZE_HEIGHT; y++) {
+      for (let x = 0; x < MAZE_WIDTH; x++) {
+        if (maze[y][x] === 1) {
+          ctx.fillStyle = 'rgba(44, 62, 80, 0.8)';
+          ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+      }
+    }
+  }
+
+  function init() {
+    generateMaze();
+    player = new Player(TILE_SIZE, TILE_SIZE);
+    canvas.width = MAZE_WIDTH * TILE_SIZE;
+    canvas.height = MAZE_HEIGHT * TILE_SIZE;
+  }
+
+  let lastTime = 0;
+  function animate(timeStamp) {
+    const deltaTime = timeStamp - lastTime;
+    lastTime = timeStamp;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw semi-transparent background
+    ctx.fillStyle = 'rgba(236, 240, 241, 0.3)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    drawMaze();
+    flagpole.draw();
+    player.update(deltaTime);
+
+    checkInteractions();
+
+    requestAnimationFrame(animate);
+  }
+
+  function checkInteractions() {
+    if (!isQuestionActive && 
+        player.x + player.width > flagpole.x && 
+        player.y + player.height > flagpole.y) {
+      showQuestion();
+    }
+  }
+
+  function showQuestion() {
+    isQuestionActive = true;
+    currentQuestion = generateQuestion();
+    questionText.textContent = currentQuestion.text;
+    questionModal.style.display = 'block';
+    answerInput.value = '';
+    answerInput.focus();
+    questionStartTime = Date.now();
+  }
+
+  function generateQuestion() {
+    const multiple = Math.floor(Math.random() * 12) + 1; // 1 to 12 multiplication tables
+    const number = Math.floor(Math.random() * 12) + 1;
+    return {
+      text: `What is ${multiple} x ${number}?`,
+      answer: multiple * number
+    };
+  }
+
+  function checkAnswer() {
+    const userAnswer = parseInt(answerInput.value);
+    if (userAnswer === currentQuestion.answer) {
+      const timeTaken = (Date.now() - questionStartTime) / 1000;
+      const pointsEarned = Math.max(100 - Math.floor(timeTaken) * 10, 10);
+      score += pointsEarned;
+      level++;
+      init();
+    } else {
+      lives--;
+      if (lives === 0) {
+        alert('Game Over! Your final score: ' + score);
+        score = 0;
+        level = 1;
+        lives = 3;
+      }
+    }
+    questionModal.style.display = 'none';
+    isQuestionActive = false;
+    updateHUD();
+    player.x = TILE_SIZE;
+    player.y = TILE_SIZE;
+  }
+
+  function updateHUD() {
+    hudScore.textContent = score.toString().padStart(4, '0');
+    hudLevel.textContent = level.toString().padStart(2, '0');
+    hudLives.textContent = lives;
+  }
+
+  function handleTouchStart(event) {
+    const touch = event.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (element && element.classList.contains('touch-button')) {
+      handleTouchMove(element.id);
+    }
+  }
+
+  function handleTouchMove(buttonId) {
+    switch (buttonId) {
+      case 'touch-up':
+        player.velocity.y = -PLAYER_SPEED;
+        break;
+      case 'touch-down':
+        player.velocity.y = PLAYER_SPEED;
+        break;
+      case 'touch-left':
+        player.velocity.x = -PLAYER_SPEED;
+        break;
+      case 'touch-right':
+        player.velocity.x = PLAYER_SPEED;
+        break;
+    }
+  }
+
+  function handleTouchEnd() {
+    player.velocity.x = 0;
+    player.velocity.y = 0;
+  }
+
+  window.addEventListener('keydown', (event) => {
+    if (!isQuestionActive) {
+      switch (event.key.toLowerCase()) {
+        case 'w':
+        case 'arrowup':
+          player.velocity.y = -PLAYER_SPEED;
+          break;
+        case 's':
+        case 'arrowdown':
+          player.velocity.y = PLAYER_SPEED;
+          break;
+        case 'a':
+        case 'arrowleft':
+          player.velocity.x = -PLAYER_SPEED;
+          break;
+        case 'd':
+        case 'arrowright':
+          player.velocity.x = PLAYER_SPEED;
+          break;
+      }
+    }
+  });
+
+  window.addEventListener('keyup', (event) => {
+    if (!isQuestionActive) {
+      switch (event.key.toLowerCase()) {
+        case 'w':
+        case 's':
+        case 'arrowup':
+        case 'arrowdown':
+          player.velocity.y = 0;
+          break;
+        case 'a':
+        case 'd':
+        case 'arrowleft':
+        case 'arrowright':
+          player.velocity.x = 0;
+          break;
+      }
+    }
+  });
+
+  submitAnswer.addEventListener('click', checkAnswer);
+  answerInput.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter') {
+      checkAnswer();
+    }
+  });
+
+  touchControls.addEventListener('touchstart', handleTouchStart);
+  touchControls.addEventListener('touchmove', (event) => {
+    event.preventDefault();
+    const touch = event.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (element && element.classList.contains('touch-button')) {
+      handleTouchMove(element.id);
+    }
+  });
+  touchControls.addEventListener('touchend', handleTouchEnd);
+
+  window.addEventListener('resize', resizeGame);
+  resizeGame();
+  init();
+  animate(0);
+  updateHUD();
+</script>
